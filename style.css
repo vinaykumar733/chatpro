@@ -69,3 +69,37 @@ input:focus{border-color:#007aff;box-shadow:0 0 0 3px rgba(0,122,255,.16)}
 .emoji-picker{border-color:rgba(60,60,67,.14);background:rgba(255,255,255,.96);box-shadow:0 12px 30px rgba(0,0,0,.16)}
 .emoji-picker button{color:#1d1d1f}.emoji-picker button:hover{background:rgba(0,122,255,.1)}
 @media(max-width:600px){.login-card{padding:30px 22px}}
+
+/* Editorial refinements */
+html,body{font-size:16px;letter-spacing:0}
+.login-screen{background:#fff}
+.login-screen:before,.login-screen:after{display:none}
+.login-card{width:min(470px,100%);padding:8vh 0 5vh;border:0;border-radius:0;background:transparent;box-shadow:none;backdrop-filter:none}
+.brand-mark{width:46px;height:46px;margin-bottom:34px;border-radius:50%;box-shadow:none}
+.eyebrow{font-size:11px;letter-spacing:0;margin-bottom:18px}
+h1{font-size:clamp(42px,6vw,64px);line-height:1.05;letter-spacing:0}
+.subtitle{margin:18px 0 42px;font-size:18px;line-height:1.45}
+label{margin:20px 0 8px;font-size:13px}
+input{height:48px;padding:13px 15px;border-radius:10px}
+.primary-button{height:48px;margin-top:28px;border-radius:24px;background:#1d1d1f;color:#fff;box-shadow:none}
+.primary-button:hover{transform:none;background:#424245;box-shadow:none}
+.chat-screen{background:#f5f5f7}
+.topbar{height:66px;flex-basis:66px;padding-left:max(24px,calc((100vw - 980px)/2));padding-right:max(24px,calc((100vw - 980px)/2));background:rgba(255,255,255,.94);backdrop-filter:blur(16px)}
+.avatar{width:40px;height:40px;border-radius:50%;font-size:14px;background:#1d1d1f;color:#fff;border:0}
+.person strong{font-size:15px;font-weight:600}.person span{font-size:12px}
+.icon-button,.composer-button{width:38px;height:38px;border:0;border-radius:50%;background:transparent}
+.icon-button:hover,.composer-button:hover{background:#e5e5ea}
+.messages{padding-top:34px;padding-bottom:34px;gap:10px}
+.empty-icon{width:48px;height:48px;border-radius:50%;background:#e5e5ea;border:0;color:#1d1d1f}
+.empty-state h2{font-size:20px;font-weight:600}.empty-state p{font-size:14px}
+.message-bubble{border-radius:16px!important;box-shadow:0 1px 2px rgba(0,0,0,.08);padding:12px 15px}
+.mine .message-bubble,.theirs .message-bubble{background:#fff;color:#000;border:1px solid rgba(60,60,67,.12)}
+.message-text,.mine .message-text,.theirs .message-text{color:#000;font-size:14px}
+.message-meta,.mine .message-meta,.message-delete,.mine .message-delete{color:#6e6e73}
+.composer{padding-top:12px;background:rgba(255,255,255,.94)}
+.composer input{height:42px;border-radius:21px;background:#e5e5ea}
+.composer #send-button{width:42px;height:42px;flex-basis:42px;border-radius:50%;background:#1d1d1f;color:#fff}
+.settings-sheet{border-left:0;box-shadow:-12px 0 40px rgba(0,0,0,.1)}
+.sheet-heading h2{font-size:30px;font-weight:600;letter-spacing:0}
+.logout-button{border-radius:22px}
+@media(max-width:600px){.login-card{padding:5vh 0}.subtitle{font-size:16px;margin-bottom:30px}.topbar{padding-left:16px;padding-right:16px}}

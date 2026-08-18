@@ -4,25 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <meta name="description" content="Private couple chat">
-  <title>Us — Private Chat</title>
+  <meta name="description" content="PRIVATE secure messenger">
+  <meta name="theme-color" content="#090b18">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <title>PRIVATE — Secure Messenger</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <section id="login-screen" class="screen login-screen">
     <div class="login-card">
-      <div class="logo-heart">♥</div>
-      <h1>Us</h1>
-      <p class="subtitle">A private place for two.</p>
+      <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
+      <p class="eyebrow">PRIVATE / SECURE SPACE</p>
+      <h1>PRIVATE</h1>
+      <p class="subtitle">Secure conversations. Beautifully simple.</p>
 
       <form id="login-form" novalidate>
         <label for="email">Email</label>
-        <input id="email" type="email" autocomplete="username" placeholder="Your email" required>
+        <input id="email" type="email" autocomplete="username" placeholder="name@example.com" required>
 
         <label for="password">Password</label>
-        <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required>
+        <div class="password-field"><input id="password" type="password" autocomplete="current-password" placeholder="Enter password" required><button id="password-toggle" type="button" class="field-action" aria-label="Show password">Show</button></div>
 
-        <button id="login-button" type="submit" class="primary-button">Enter privately</button>
+        <button id="login-button" type="submit" class="primary-button"><span class="button-label">Continue</span><span class="button-loader" aria-hidden="true"></span></button>
         <div id="login-error" class="error" aria-live="polite"></div>
       </form>
     </div>
@@ -31,30 +38,52 @@
   <section id="chat-screen" class="screen chat-screen hidden">
     <header class="topbar">
       <div class="person">
-        <div class="avatar">♥</div>
+        <div class="avatar">P</div>
         <div>
-          <strong>My Love</strong>
-          <span id="presence">Private chat</span>
+          <strong>Private chat</strong>
+          <span id="presence"><i></i> Online now</span>
         </div>
       </div>
-      <button id="logout-button" class="small-button" type="button">Logout</button>
+      <div class="header-actions"><button id="call-button" class="icon-button" type="button" aria-label="Call placeholder" title="Calls coming soon">⌕</button><button id="settings-button" class="icon-button" type="button" aria-label="Open settings">☰</button></div>
     </header>
 
     <div id="chat-error" class="chat-error hidden" aria-live="polite"></div>
 
     <main id="messages" class="messages">
       <div class="empty-state">
-        <div class="big-heart">♥</div>
-        <h2>Just us</h2>
+        <div class="empty-icon">✦</div>
+        <h2>A quiet place to talk.</h2>
         <p>Your private conversation starts here.</p>
       </div>
     </main>
 
     <form id="message-form" class="composer">
-      <input id="message-input" type="text" maxlength="4000" autocomplete="off" placeholder="Message…">
-      <button id="send-button" type="submit">➤</button>
+      <button id="plus-button" class="composer-button" type="button" aria-label="More options">+</button>
+      <input id="message-input" type="text" maxlength="4000" autocomplete="off" placeholder="Message...">
+      <button id="emoji-button" class="composer-button" type="button" aria-label="Add emoji">☺</button>
+      <button id="mic-button" class="composer-button" type="button" aria-label="Voice message placeholder" title="Voice messages coming soon">◉</button>
+      <button id="send-button" type="submit" aria-label="Send message">↑</button>
     </form>
   </section>
+
+  <div id="settings-panel" class="settings-panel hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="settings-backdrop" data-close-settings></div>
+    <section class="settings-sheet">
+      <div class="sheet-heading"><div><p class="eyebrow">PRIVATE / CONTROL ROOM</p><h2 id="settings-title">Settings</h2></div><button class="close-button" type="button" data-close-settings aria-label="Close settings">×</button></div>
+      <div class="settings-section"><p class="section-label">Notifications</p>
+        <label class="setting-row"><span><strong>Message sounds</strong><small>Play a subtle tone for new messages.</small></span><input id="sound-setting" class="switch" type="checkbox" checked></label>
+        <label class="setting-row"><span><strong>Notifications</strong><small id="notification-status">Allow notifications to receive alerts for new messages.</small></span><input id="notification-setting" class="switch" type="checkbox"></label>
+        <label class="setting-row"><span><strong>Message previews</strong><small>Show message text in alerts.</small></span><input id="preview-setting" class="switch" type="checkbox" checked></label>
+        <label class="setting-row"><span><strong>Vibration</strong><small>Use haptics on supported devices.</small></span><input id="vibration-setting" class="switch" type="checkbox" checked></label>
+      </div>
+      <div class="settings-section"><p class="section-label">Appearance</p><div class="setting-row static"><span><strong>Dark mode</strong><small>Always on for a focused private space.</small></span><span class="status-pill">ON</span></div><div class="setting-row static"><span><strong>Accent style</strong><small>Midnight violet</small></span><span class="accent-swatch"></span></div></div>
+      <div class="settings-section"><p class="section-label">Privacy</p><div class="privacy-note"><span>◎</span><span><strong>Private chat</strong><small>No analytics. No tracking. No public profiles.</small></span></div></div>
+      <button id="install-button" class="install-row hidden" type="button"><span class="install-icon">↓</span><span><strong id="install-title">Install PRIVATE</strong><small id="install-copy">Add a private space to your home screen.</small></span><span>›</span></button>
+      <div id="ios-install-help" class="ios-help hidden"><strong>Install on iPhone</strong><span>1. Tap Share &nbsp; 2. Choose Add to Home Screen &nbsp; 3. Tap Add</span></div>
+      <div class="sheet-footer">PRIVATE <span>v1.0.0</span></div>
+      <button id="logout-button" class="logout-button" type="button">Log out securely</button>
+    </section>
+  </div>
 
   <script type="module" src="./app.js?v=3"></script>
 </body>

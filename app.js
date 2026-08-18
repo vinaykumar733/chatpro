@@ -73,14 +73,36 @@ const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 const loginButton = document.getElementById("login-button");
 const loginError = document.getElementById("login-error");
+const passwordToggle = document.getElementById("password-toggle");
 
 const messages = document.getElementById("messages");
 const chatError = document.getElementById("chat-error");
 const messageForm = document.getElementById("message-form");
 const messageInput = document.getElementById("message-input");
 const logoutButton = document.getElementById("logout-button");
+const settingsButton = document.getElementById("settings-button");
+const settingsPanel = document.getElementById("settings-panel");
+const soundSetting = document.getElementById("sound-setting");
+const notificationSetting = document.getElementById("notification-setting");
+const previewSetting = document.getElementById("preview-setting");
+const vibrationSetting = document.getElementById("vibration-setting");
+const notificationStatus = document.getElementById("notification-status");
+const installButton = document.getElementById("install-button");
+const installTitle = document.getElementById("install-title");
+const installCopy = document.getElementById("install-copy");
+const iosInstallHelp = document.getElementById("ios-install-help");
 
 let stopMessages = null;
+let audioContext = null;
+let audioUnlocked = false;
+let deferredInstallPrompt = null;
+let messagesHydrated = false;
+const notifiedMessageIds = new Set();
+const preferences = {
+  sound: localStorage.getItem("private.sound") !== "off",
+  previews: localStorage.getItem("private.previews") !== "off",
+  vibration: localStorage.getItem("private.vibration") !== "off"
+};
 
 /* ================= UI ================= */
 
@@ -121,7 +143,104 @@ function firestoreErrorText(error, action) {
 
 function setLoginLoading(value) {
   loginButton.disabled = value;
-  loginButton.textContent = value ? "Entering privately..." : "Enter privately";
+  loginButton.classList.toggle("loading", value);
+}
+
+function unlockAudio() {
+  if (audioUnlocked) return;
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return;
+  audioContext ||= new AudioContextClass();
+  audioContext.resume().then(() => {
+    audioUnlocked = true;
+  }).catch(() => {});
+}
+
+function playMessageTone() {
+  if (!preferences.sound || !audioUnlocked || !audioContext) return;
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+  const now = audioContext.currentTime;
+  oscillator.type = "sine";
+  oscillator.frequency.setValueAtTime(660, now);
+  oscillator.frequency.exponentialRampToValueAtTime(880, now + 0.11);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.055, now + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+  oscillator.connect(gain).connect(audioContext.destination);
+  oscillator.start(now);
+  oscillator.stop(now + 0.24);
+  if (preferences.vibration && navigator.vibrate) navigator.vibrate(35);
+}
+
+function showToast(preview) {
+  document.querySelector(".toast")?.remove();
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  const title = document.createElement("strong");
+  title.textContent = "New message";
+  const body = document.createElement("span");
+  body.textContent = preferences.previews ? preview : "New message";
+  toast.append(title, body);
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 4200);
+}
+
+function updateNotificationStatus() {
+  if (!("Notification" in window)) {
+    notificationStatus.textContent = "Notifications are not supported in this browser.";
+    notificationSetting.checked = false;
+    notificationSetting.disabled = true;
+    return;
+  }
+  if (Notification.permission === "granted") {
+    notificationStatus.textContent = "Notifications enabled.";
+    notificationSetting.checked = true;
+  } else if (Notification.permission === "denied") {
+    notificationStatus.textContent = "Notifications blocked — open browser settings to enable them.";
+    notificationSetting.checked = false;
+  } else {
+    notificationStatus.textContent = "Allow notifications to receive alerts for new messages.";
+    notificationSetting.checked = false;
+  }
+}
+
+async function enableNotifications() {
+  if (!("Notification" in window)) return updateNotificationStatus();
+  const permission = await Notification.requestPermission();
+  updateNotificationStatus();
+  if (permission === "granted") registerServiceWorker();
+}
+
+function isIosSafari() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+}
+
+function isStandalone() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+}
+
+function updateInstallOption() {
+  if (isStandalone()) {
+    installButton.classList.add("hidden");
+    iosInstallHelp.classList.add("hidden");
+  } else if (isIosSafari()) {
+    installButton.classList.add("hidden");
+    iosInstallHelp.classList.remove("hidden");
+  } else if (deferredInstallPrompt) {
+    installTitle.textContent = "Install PRIVATE";
+    installCopy.textContent = "Add a private space to your home screen.";
+    installButton.classList.remove("hidden");
+  }
+}
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    await navigator.serviceWorker.register("./service-worker.js", {scope: "./"});
+  } catch (error) {
+    console.error("PRIVATE: service worker registration failed", error);
+  }
 }
 
 /* ================= AUTH ERRORS ================= */
@@ -199,6 +318,73 @@ loginButton.addEventListener("click", () => {
   console.log("CHATPRO: login button clicked");
 });
 
+passwordToggle.addEventListener("click", () => {
+  const visible = passwordInput.type === "text";
+  passwordInput.type = visible ? "password" : "text";
+  passwordToggle.textContent = visible ? "Show" : "Hide";
+  passwordToggle.setAttribute("aria-label", visible ? "Show password" : "Hide password");
+});
+
+document.addEventListener("pointerdown", unlockAudio, {once: true});
+settingsButton.addEventListener("click", () => {
+  settingsPanel.classList.remove("hidden");
+  updateNotificationStatus();
+  updateInstallOption();
+});
+document.querySelectorAll("[data-close-settings]").forEach((element) => {
+  element.addEventListener("click", () => settingsPanel.classList.add("hidden"));
+});
+
+soundSetting.checked = preferences.sound;
+previewSetting.checked = preferences.previews;
+vibrationSetting.checked = preferences.vibration;
+soundSetting.addEventListener("change", () => {
+  preferences.sound = soundSetting.checked;
+  localStorage.setItem("private.sound", preferences.sound ? "on" : "off");
+});
+previewSetting.addEventListener("change", () => {
+  preferences.previews = previewSetting.checked;
+  localStorage.setItem("private.previews", preferences.previews ? "on" : "off");
+});
+vibrationSetting.addEventListener("change", () => {
+  preferences.vibration = vibrationSetting.checked;
+  localStorage.setItem("private.vibration", preferences.vibration ? "on" : "off");
+});
+notificationSetting.addEventListener("change", () => {
+  if (notificationSetting.checked) enableNotifications();
+  else notificationSetting.checked = typeof Notification !== "undefined" && Notification.permission === "granted";
+});
+
+document.getElementById("emoji-button").addEventListener("click", () => {
+  messageInput.value += "  " + String.fromCodePoint(0x2728);
+  messageInput.focus();
+});
+document.getElementById("plus-button").addEventListener("click", () => messageInput.focus());
+document.getElementById("mic-button").addEventListener("click", () => showChatError("Voice messages are not enabled for this private chat."));
+document.getElementById("call-button").addEventListener("click", () => showChatError("Calls are not enabled for this private chat."));
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  updateInstallOption();
+});
+installButton.addEventListener("click", async () => {
+  if (!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+  updateInstallOption();
+});
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  updateInstallOption();
+});
+window.addEventListener("load", () => {
+  registerServiceWorker();
+  updateInstallOption();
+  updateNotificationStatus();
+});
+
 /* ================= LOGOUT ================= */
 
 logoutButton.addEventListener("click", async () => {
@@ -264,6 +450,9 @@ function startMessages(uid) {
     stopMessages = null;
   }
 
+  messagesHydrated = false;
+  notifiedMessageIds.clear();
+
   const messagesQuery = query(
     messagesRef,
     orderBy("createdAt", "asc"),
@@ -287,12 +476,29 @@ function startMessages(uid) {
         description.textContent = "Your private conversation starts here.";
         empty.append(heart, heading, description);
         messages.appendChild(empty);
+        messagesHydrated = true;
         return;
       }
 
       snapshot.forEach((messageDoc) => {
         const data = messageDoc.data();
         const mine = data.senderId === uid;
+
+        if (!mine && messagesHydrated && !notifiedMessageIds.has(messageDoc.id)) {
+          notifiedMessageIds.add(messageDoc.id);
+          const preview = data.text || "New message";
+          playMessageTone();
+          showToast(preview);
+          if (document.hidden && Notification.permission === "granted") {
+            navigator.serviceWorker?.ready.then((registration) => registration.showNotification("New message", {
+              body: preferences.previews ? preview : "New message",
+              tag: `private-message-${messageDoc.id}`,
+              icon: "./icons/icon-192.svg",
+              badge: "./icons/icon-192.svg",
+              data: {url: window.location.href}
+            })).catch(() => {});
+          }
+        }
 
         const row = document.createElement("div");
         row.className = mine ? "message-row mine" : "message-row theirs";
@@ -320,6 +526,12 @@ function startMessages(uid) {
         meta.appendChild(document.createTextNode(time));
 
         if (mine) {
+          const deliveryStatus = document.createElement("span");
+          deliveryStatus.className = "message-status";
+          deliveryStatus.textContent = "✓✓";
+          deliveryStatus.setAttribute("aria-label", "Message sent");
+          meta.appendChild(deliveryStatus);
+
           const deleteButton = document.createElement("button");
           deleteButton.className = "message-delete";
           deleteButton.type = "button";
@@ -348,6 +560,7 @@ function startMessages(uid) {
       });
 
       messages.scrollTop = messages.scrollHeight;
+      messagesHydrated = true;
     },
     (error) => {
       const message = firestoreErrorText(error, "listener");

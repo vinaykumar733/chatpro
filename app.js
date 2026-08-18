@@ -237,8 +237,8 @@ async function enableNotifications() {
   if (permission === "granted") registerServiceWorker();
 }
 
-function isIosSafari() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent) && /safari/i.test(navigator.userAgent) && !/crios|fxios/i.test(navigator.userAgent);
+function isIosDevice() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
 function isStandalone() {
@@ -249,13 +249,19 @@ function updateInstallOption() {
   if (isStandalone()) {
     installButton.classList.add("hidden");
     iosInstallHelp.classList.add("hidden");
-  } else if (isIosSafari()) {
+  } else if (isIosDevice()) {
     installButton.classList.add("hidden");
     iosInstallHelp.classList.remove("hidden");
   } else if (deferredInstallPrompt) {
     installTitle.textContent = "Install PRIVATE";
     installCopy.textContent = "Add a private space to your home screen.";
     installButton.classList.remove("hidden");
+    iosInstallHelp.classList.add("hidden");
+  } else {
+    installTitle.textContent = "Add PRIVATE to Home Screen";
+    installCopy.textContent = "Open your browser menu and choose Add to Home Screen.";
+    installButton.classList.remove("hidden");
+    iosInstallHelp.classList.add("hidden");
   }
 }
 
@@ -557,7 +563,10 @@ window.addEventListener("beforeinstallprompt", (event) => {
   updateInstallOption();
 });
 installButton.addEventListener("click", async () => {
-  if (!deferredInstallPrompt) return;
+  if (!deferredInstallPrompt) {
+    installCopy.textContent = "Open your browser menu and choose Add to Home Screen.";
+    return;
+  }
   deferredInstallPrompt.prompt();
   await deferredInstallPrompt.userChoice;
   deferredInstallPrompt = null;

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="description" content="Private couple chat">
+  <title>Us — Private Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <section id="login-screen" class="screen login-screen">
+    <div class="login-card">
+      <div class="logo-heart">♥</div>
+      <h1>Us</h1>
+      <p class="subtitle">A private place for two.</p>
+
+      <form id="login-form" novalidate>
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" placeholder="Your email" required>
+
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required>
+
+        <button id="login-button" type="submit" class="primary-button">Enter privately</button>
+        <div id="login-error" class="error" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="chat-screen" class="screen chat-screen hidden">
+    <header class="topbar">
+      <div class="person">
+        <div class="avatar">♥</div>
+        <div>
+          <strong>My Love</strong>
+          <span id="presence">Private chat</span>
+        </div>
+      </div>
+      <button id="logout-button" class="small-button" type="button">Logout</button>
+    </header>
+
+    <main id="messages" class="messages">
+      <div class="empty-state">
+        <div class="big-heart">♥</div>
+        <h2>Just us</h2>
+        <p>Your private conversation starts here.</p>
+      </div>
+    </main>
+
+    <form id="message-form" class="composer">
+      <input id="message-input" type="text" maxlength="4000" autocomplete="off" placeholder="Message…">
+      <button id="send-button" type="submit">➤</button>
+    </form>
+  </section>
+
+  <script type="module" src="./app.js?v=2"></script>
+</body>
+</html>

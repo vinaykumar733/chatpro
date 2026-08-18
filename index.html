@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Private couple chat">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Us — Private Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <section id="login-screen" class="screen">
+      <div class="login-card">
+        <div class="logo">♥</div>
+        <h1>Us</h1>
+        <p class="subtitle">A private place for two.</p>
+
+        <form id="login-form">
+          <label>Email</label>
+          <input id="email" type="email" autocomplete="username" required>
+
+          <label>Password</label>
+          <input id="password" type="password" autocomplete="current-password" required>
+
+          <button type="submit" class="primary">Enter privately</button>
+          <p id="login-error" class="error"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="chat-screen" class="screen hidden">
+      <header class="topbar">
+        <div class="person">
+          <div class="avatar" id="partner-avatar">♥</div>
+          <div>
+            <strong id="partner-name">My Love</strong>
+            <small id="presence">Private chat</small>
+          </div>
+        </div>
+        <button id="logout-btn" class="icon-btn" title="Sign out">↪</button>
+      </header>
+
+      <main id="messages" class="messages">
+        <div id="empty-state" class="empty-state">
+          <div class="big-heart">♥</div>
+          <h2>Just us</h2>
+          <p>Your private conversation starts here.</p>
+        </div>
+      </main>
+
+      <div id="typing" class="typing hidden">typing…</div>
+
+      <form id="message-form" class="composer">
+        <button type="button" id="emoji-btn" class="icon-btn" title="Emoji">☺</button>
+        <input id="message-input" placeholder="Message…" autocomplete="off" maxlength="4000">
+        <button type="submit" class="send-btn" title="Send">➤</button>
+      </form>
+    </section>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

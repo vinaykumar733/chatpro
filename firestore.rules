@@ -16,12 +16,19 @@ service cloud.firestore {
       allow read: if isCouple();
 
       allow create: if isCouple()
+        && request.resource.data.keys().hasOnly([
+          "senderId", "text", "createdAt"
+        ])
         && request.resource.data.senderId == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 4000;
+        && request.resource.data.text.size() <= 4000
+        && request.resource.data.createdAt is timestamp;
 
       allow delete: if isCouple()
+        && resource.data.keys().hasOnly([
+          "senderId", "text", "createdAt"
+        ])
         && resource.data.senderId == request.auth.uid;
 
       allow update: if false;

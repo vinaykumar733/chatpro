@@ -26,6 +26,8 @@ import {
   deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.7.1/firebase-firestore.js";
 
+console.log("CHATPRO: app loaded");
+
 /* ================= FIREBASE CONFIG ================= */
 
 const firebaseConfig = {
@@ -46,11 +48,20 @@ const ALLOWED_UIDS = new Set([MY_UID, GIRLFRIEND_UID]);
 
 /* ================= INITIALIZE ================= */
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = getFirestore(firebaseApp);
+let firebaseApp;
+let auth;
+let db;
 
-const messagesRef = collection(db, "couple", "main", "messages");
+try {
+  firebaseApp = initializeApp(firebaseConfig);
+  auth = getAuth(firebaseApp);
+  db = getFirestore(firebaseApp);
+  console.log("CHATPRO: Firebase initialized");
+} catch (error) {
+  console.error("CHATPRO: Firebase initialization error", error);
+}
+
+const messagesRef = db ? collection(db, "couple", "main", "messages") : null;
 
 /* ================= ELEMENTS ================= */
 
@@ -64,6 +75,7 @@ const loginButton = document.getElementById("login-button");
 const loginError = document.getElementById("login-error");
 
 const messages = document.getElementById("messages");
+const chatError = document.getElementById("chat-error");
 const messageForm = document.getElementById("message-form");
 const messageInput = document.getElementById("message-input");
 const logoutButton = document.getElementById("logout-button");
@@ -85,6 +97,26 @@ function showChat() {
 
 function errorText(text) {
   loginError.textContent = text || "";
+}
+
+function showChatError(text) {
+  chatError.textContent = text || "";
+  chatError.classList.toggle("hidden", !text);
+}
+
+function firestoreErrorText(error, action) {
+  console.error(`CHATPRO: Firestore ${action} error`, error.code, error);
+
+  switch (error.code) {
+    case "permission-denied":
+      return "Firestore denied this request. Confirm the published rules and your authorized UID.";
+    case "unavailable":
+      return "Firestore is temporarily unavailable. Check your network and try again.";
+    case "failed-precondition":
+      return "Firestore could not load messages. Check the database configuration.";
+    default:
+      return `Messages could not ${action === "listener" ? "load" : "be sent"} (${error.code || "unknown error"}).`;
+  }
 }
 
 function setLoginLoading(value) {
@@ -124,7 +156,7 @@ function readableAuthError(error) {
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  console.log("CHATPRO: login form submitted");
+  console.log("CHATPRO: login submitted");
 
   const email = emailInput.value.trim();
   const password = passwordInput.value;
@@ -143,8 +175,9 @@ loginForm.addEventListener("submit", async (event) => {
 
     const user = result.user;
 
-    console.log("CHATPRO: Firebase login successful");
-    console.log("CHATPRO: UID:", user.uid);
+    console.log("CHATPRO: Firebase authentication successful");
+    console.log("CHATPRO: authenticated UID =", user.uid);
+    console.log("CHATPRO: allowed UID match =", ALLOWED_UIDS.has(user.uid));
 
     if (!ALLOWED_UIDS.has(user.uid)) {
       await signOut(auth);
@@ -160,6 +193,10 @@ loginForm.addEventListener("submit", async (event) => {
   } finally {
     setLoginLoading(false);
   }
+});
+
+loginButton.addEventListener("click", () => {
+  console.log("CHATPRO: login button clicked");
 });
 
 /* ================= LOGOUT ================= */
@@ -208,10 +245,10 @@ messageForm.addEventListener("submit", async (event) => {
 
     messageInput.value = "";
     messageInput.focus();
+    showChatError("");
 
   } catch (error) {
-    console.error("CHATPRO: send message error", error);
-    alert("Message could not be sent. Check Firestore Rules.");
+    showChatError(firestoreErrorText(error, "send"));
   } finally {
     sendButton.disabled = false;
   }
@@ -220,6 +257,8 @@ messageForm.addEventListener("submit", async (event) => {
 /* ================= MESSAGE LISTENER ================= */
 
 function startMessages(uid) {
+  console.log("CHATPRO: starting Firestore listener");
+
   if (stopMessages) {
     stopMessages();
     stopMessages = null;
@@ -234,16 +273,19 @@ function startMessages(uid) {
   stopMessages = onSnapshot(
     messagesQuery,
     (snapshot) => {
-      messages.innerHTML = "";
+      messages.replaceChildren();
 
       if (snapshot.empty) {
         const empty = document.createElement("div");
         empty.className = "empty-state";
-        empty.innerHTML = `
-          <div class="big-heart">♥</div>
-          <h2>Just us</h2>
-          <p>Your private conversation starts here.</p>
-        `;
+        const heart = document.createElement("div");
+        heart.className = "big-heart";
+        heart.textContent = "♥";
+        const heading = document.createElement("h2");
+        heading.textContent = "Just us";
+        const description = document.createElement("p");
+        description.textContent = "Your private conversation starts here.";
+        empty.append(heart, heading, description);
         messages.appendChild(empty);
         return;
       }
@@ -290,9 +332,9 @@ function startMessages(uid) {
               await deleteDoc(
                 doc(db, "couple", "main", "messages", messageDoc.id)
               );
+              showChatError("");
             } catch (error) {
-              console.error(error);
-              alert("Could not delete message.");
+              showChatError(firestoreErrorText(error, "delete"));
             }
           });
 
@@ -308,14 +350,13 @@ function startMessages(uid) {
       messages.scrollTop = messages.scrollHeight;
     },
     (error) => {
-      console.error("CHATPRO: Firestore listener error", error);
+      const message = firestoreErrorText(error, "listener");
 
-      messages.innerHTML = "";
+      messages.replaceChildren();
 
       const errorBox = document.createElement("div");
       errorBox.className = "chat-error";
-      errorBox.textContent =
-        "Messages cannot load. Your Firestore Rules need to be updated.";
+      errorBox.textContent = message;
       messages.appendChild(errorBox);
     }
   );
@@ -323,33 +364,39 @@ function startMessages(uid) {
 
 /* ================= AUTH STATE ================= */
 
-setPersistence(auth, browserLocalPersistence).catch((error) => {
-  console.error("Persistence error:", error);
-});
+if (auth) {
+  setPersistence(auth, browserLocalPersistence).catch((error) => {
+    console.error("CHATPRO: auth persistence error", error.code, error);
+  });
+}
 
-onAuthStateChanged(auth, (user) => {
-  console.log("CHATPRO: auth state changed", user?.uid || "signed out");
+if (auth) {
+  onAuthStateChanged(auth, (user) => {
+    console.log("CHATPRO: auth state changed", user?.uid || "signed out");
 
-  if (!user) {
-    if (stopMessages) {
-      stopMessages();
-      stopMessages = null;
+    if (!user) {
+      if (stopMessages) {
+        stopMessages();
+        stopMessages = null;
+      }
+
+      showLogin();
+      return;
     }
 
-    showLogin();
-    return;
-  }
+    console.log("CHATPRO: authenticated UID =", user.uid);
 
-  if (!ALLOWED_UIDS.has(user.uid)) {
-    console.warn("CHATPRO: unauthorized account", user.uid);
-    signOut(auth);
-    errorText("This account is not authorized for this private chat.");
-    showLogin();
-    return;
-  }
+    if (!ALLOWED_UIDS.has(user.uid)) {
+      console.warn("CHATPRO: unauthorized account", user.uid);
+      signOut(auth);
+      errorText("This account is not authorized for this private chat.");
+      showLogin();
+      return;
+    }
 
-  showChat();
-  startMessages(user.uid);
-});
-
-console.log("CHATPRO: application loaded successfully.");
+    showChat();
+    startMessages(user.uid);
+  });
+} else {
+  errorText("Firebase could not initialize. Check the configuration and reload.");
+}

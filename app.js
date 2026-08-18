@@ -24,7 +24,7 @@ import {
  * This is client configuration, not an Admin SDK secret.
  */
 const firebaseConfig = {
-  apiKey: "AIzaSyB9SXr7eGrGFIBV0FJ8qtOGP4UDbYXJ7zU",
+  apiKey: "AIzaSyB9SXr7eGrGFIBV0F J8qtOGP4UDbYXJ7zU",
   authDomain: "chatpro-27e22.firebaseapp.com",
   projectId: "chatpro-27e22",
   storageBucket: "chatpro-27e22.firebasestorage.app",

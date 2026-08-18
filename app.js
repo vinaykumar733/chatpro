@@ -304,39 +304,152 @@ async function login(email, password) {
    LOGIN FORM
    ========================================================= */
 
-if (loginForm) {
+/* =========================================================
+   LOGIN BUTTON — ROBUST HANDLER
+   ========================================================= */
 
-  loginForm.addEventListener(
-    "submit",
-    async (event) => {
+async function handleLogin() {
 
-      event.preventDefault();
+  const email =
+    document.querySelector("#email")?.value?.trim() || "";
 
-      const email =
-        emailInput?.value || "";
+  const password =
+    document.querySelector("#password")?.value || "";
 
-      const password =
-        passwordInput?.value || "";
+  const button =
+    document.querySelector("#login-button") ||
+    document.querySelector("button[type='submit']");
 
-      if (!email || !password) {
+  console.log("LOGIN BUTTON CLICKED");
+  console.log("Email:", email);
 
-        showLoginError(
-          "Enter your email and password."
-        );
+  if (!email || !password) {
 
-        return;
-      }
+    showLoginError(
+      "Please enter your email and password."
+    );
 
-      await login(
+    return;
+  }
+
+  try {
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Entering privately...";
+    }
+
+    showLoginError("");
+
+    const result =
+      await signInWithEmailAndPassword(
+        auth,
         email,
         password
       );
 
-    }
-  );
+    const user = result.user;
 
+    console.log(
+      "Firebase login successful:",
+      user.uid
+    );
+
+    /* ONLY YOUR TWO ACCOUNTS */
+
+    if (!ALLOWED_UIDS.has(user.uid)) {
+
+      await signOut(auth);
+
+      showLoginError(
+        "This account is not authorized for this private chat."
+      );
+
+      return;
+    }
+
+    showChat(user);
+
+    startMessageListener(user);
+
+  } catch (error) {
+
+    console.error(
+      "LOGIN ERROR:",
+      error
+    );
+
+    showLoginError(
+      firebaseError(error)
+    );
+
+  } finally {
+
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Enter privately";
+    }
+
+  }
 }
 
+
+/* Listen for normal form submit */
+
+document.addEventListener(
+  "submit",
+  (event) => {
+
+    const form =
+      event.target;
+
+    if (
+      form.matches("#login-form") ||
+      form.querySelector("#email")
+    ) {
+
+      event.preventDefault();
+
+      handleLogin();
+
+    }
+
+  }
+);
+
+
+/* Listen for button click */
+
+document.addEventListener(
+  "click",
+  (event) => {
+
+    const button =
+      event.target.closest(
+        "#login-button, button[type='submit']"
+      );
+
+    if (!button) return;
+
+    const emailField =
+      document.querySelector("#email");
+
+    const passwordField =
+      document.querySelector("#password");
+
+    if (
+      emailField &&
+      passwordField
+    ) {
+
+      event.preventDefault();
+
+      handleLogin();
+
+    }
+
+  }
+);
 
 /* =========================================================
    ESCAPE HTML

@@ -28,8 +28,7 @@ service cloud.firestore {
       allow delete: if isCouple()
         && resource.data.keys().hasOnly([
           "senderId", "text", "createdAt"
-        ])
-        && resource.data.senderId == request.auth.uid;
+        ]);
 
       allow update: if false;
     }

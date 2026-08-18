@@ -23,7 +23,8 @@ import {
   onSnapshot,
   serverTimestamp,
   doc,
-  deleteDoc
+  deleteDoc,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
 console.log("CHATPRO: app loaded");
@@ -91,6 +92,8 @@ const installButton = document.getElementById("install-button");
 const installTitle = document.getElementById("install-title");
 const installCopy = document.getElementById("install-copy");
 const iosInstallHelp = document.getElementById("ios-install-help");
+const emojiButton = document.getElementById("emoji-button");
+const emojiPicker = document.getElementById("emoji-picker");
 
 let stopMessages = null;
 let audioContext = null;
@@ -355,9 +358,15 @@ notificationSetting.addEventListener("change", () => {
   else notificationSetting.checked = typeof Notification !== "undefined" && Notification.permission === "granted";
 });
 
-document.getElementById("emoji-button").addEventListener("click", () => {
-  messageInput.value += "  " + String.fromCodePoint(0x2728);
+emojiButton.addEventListener("click", () => {
+  emojiPicker.classList.toggle("hidden");
   messageInput.focus();
+});
+emojiPicker.querySelectorAll("button").forEach((button) => {
+  button.addEventListener("click", () => {
+    messageInput.value += button.dataset.emoji;
+    messageInput.focus();
+  });
 });
 document.getElementById("plus-button").addEventListener("click", () => messageInput.focus());
 document.getElementById("mic-button").addEventListener("click", () => showChatError("Voice messages are not enabled for this private chat."));
@@ -387,16 +396,32 @@ window.addEventListener("load", () => {
 
 /* ================= LOGOUT ================= */
 
+async function clearMessages() {
+  if (!messagesRef) return;
+
+  const snapshot = await getDocs(messagesRef);
+  await Promise.all(snapshot.docs.map((messageDoc) => deleteDoc(messageDoc.ref)));
+}
+
 logoutButton.addEventListener("click", async () => {
+  logoutButton.disabled = true;
   if (stopMessages) {
     stopMessages();
     stopMessages = null;
   }
 
-  await signOut(auth);
-  passwordInput.value = "";
-  errorText("");
-  showLogin();
+  try {
+    await clearMessages();
+    await signOut(auth);
+    passwordInput.value = "";
+    messageInput.value = "";
+    errorText("");
+    showLogin();
+  } catch (error) {
+    showChatError("Messages could not be cleared. Please try again.");
+  } finally {
+    logoutButton.disabled = false;
+  }
 });
 
 /* ================= SEND MESSAGE ================= */

@@ -2,35 +2,81 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function isCouple() {
       return request.auth != null
-        && (
-          request.auth.uid == "hk9Jmy7qKVdJReYaeRlDvuddVFy1"
-          || request.auth.uid == "xH4VGaqQARfIe41fZGIsrzF62uj1"
-        );
+        && (request.auth.uid == "hk9Jmy7qKVdJReYaeRlDvuddVFy1"
+          || request.auth.uid == "xH4VGaqQARfIe41fZGIsrzF62uj1");
+    }
+
+    function currentSession() {
+      return get(/databases/$(database)/documents/couple/main/session).data.id;
+    }
+
+    function isCurrentMessage() {
+      return resource.data.sessionId == currentSession();
+    }
+
+    match /couple/main/session {
+      allow read: if isCouple();
+      allow create: if isCouple()
+        && request.resource.data.keys().hasOnly(["id", "createdAt", "offlineSince"])
+        && request.resource.data.id is string;
+      allow update: if isCouple()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["id", "createdAt", "offlineSince"])
+        && request.resource.data.id is string;
+      allow delete: if false;
     }
 
     match /couple/main/messages/{messageId} {
-
-      allow read: if isCouple();
+      allow read: if isCouple()
+        && (!resource.data.keys().hasAny(["sessionId"]) || isCurrentMessage());
 
       allow create: if isCouple()
-        && request.resource.data.keys().hasOnly([
-          "senderId", "text", "createdAt"
-        ])
+        && request.resource.data.keys().hasOnly(["senderId", "text", "createdAt", "sessionId", "expiresAt", "replyTo"])
         && request.resource.data.senderId == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 4000
-        && request.resource.data.createdAt is timestamp;
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.sessionId == currentSession()
+        && (!request.resource.data.keys().hasAny(["expiresAt"]) || request.resource.data.expiresAt is timestamp)
+        && (!request.resource.data.keys().hasAny(["replyTo"]) || request.resource.data.replyTo.keys().hasOnly(["messageId", "text", "senderId"]));
 
-      allow delete: if isCouple()
-        && resource.data.keys().hasOnly([
-          "senderId", "text", "createdAt"
-        ]);
+      allow update: if isCouple() && isCurrentMessage()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["deliveredTo", "readBy"])
+        && (!request.resource.data.keys().hasAny(["deliveredTo"]) || request.resource.data.deliveredTo is list)
+        && (!request.resource.data.keys().hasAny(["readBy"]) || request.resource.data.readBy is list);
 
-      allow update: if false;
+      allow delete: if isCouple() && isCurrentMessage();
+
+      match /reactions/{uid} {
+        allow read: if isCouple();
+        allow create, update: if isCouple() && uid == request.auth.uid
+          && get(/databases/$(database)/documents/couple/main/messages/$(messageId)).data.sessionId == currentSession()
+          && request.resource.data.keys().hasOnly(["emoji", "createdAt"])
+          && request.resource.data.emoji in ["❤️", "😂", "👍", "😮", "😢", "🔥"];
+        allow delete: if isCouple() && uid == request.auth.uid
+          && get(/databases/$(database)/documents/couple/main/messages/$(messageId)).data.sessionId == currentSession();
+      }
+    }
+
+    match /couple/main/presence/{uid} {
+      allow read: if isCouple();
+      allow create, update: if isCouple() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(["online", "heartbeatAt", "lastSeenAt"])
+        && request.resource.data.online is bool
+        && request.resource.data.heartbeatAt is timestamp
+        && request.resource.data.lastSeenAt is timestamp;
+      allow delete: if false;
+    }
+
+    match /couple/main/typing/{uid} {
+      allow read: if isCouple();
+      allow create, update: if isCouple() && uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(["typing", "updatedAt"])
+        && request.resource.data.typing is bool
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
     }
 
     match /{document=**} {

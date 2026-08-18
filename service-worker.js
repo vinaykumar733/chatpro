@@ -41,7 +41,7 @@ self.addEventListener("push", (event) => {
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
   const title = payload.title || "New message";
   const options = {
-    body: payload.body || "New message",
+    body: payload.previewAllowed === true ? (payload.body || "New message") : "New message",
     tag: payload.tag || "private-message",
     icon: "./icons/icon-192.svg",
     badge: "./icons/icon-192.svg",

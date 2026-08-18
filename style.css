@@ -103,3 +103,5 @@ input{height:48px;padding:13px 15px;border-radius:10px}
 .sheet-heading h2{font-size:30px;font-weight:600;letter-spacing:0}
 .logout-button{border-radius:22px}
 @media(max-width:600px){.login-card{padding:5vh 0}.subtitle{font-size:16px;margin-bottom:30px}.topbar{padding-left:16px;padding-right:16px}}
+
+.reply-bar{display:flex;align-items:center;gap:12px;max-width:760px;width:100%;margin:0 auto;padding:8px 14px;border-top:1px solid rgba(60,60,67,.12);background:rgba(255,255,255,.94);color:#6e6e73;font-size:12px}.reply-bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}.reply-bar button{border:0;background:transparent;color:#6e6e73;font-size:18px}.message-reply{padding-bottom:6px;color:#6e6e73;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.message-actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}.message-actions button{border:0;border-radius:8px;padding:3px 6px;background:#e5e5ea;color:#3c3c43;font-size:11px}.setting-row select{border:1px solid rgba(60,60,67,.18);border-radius:9px;background:#e5e5ea;color:#1d1d1f;padding:6px 8px;font-size:11px}
